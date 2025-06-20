@@ -47,7 +47,8 @@ int main() {
     // 连接信号槽（自动跨线程）
     // worker.workFinished.connect([&] { controller.onWorkFinished(); }, &controller);
 
-    timer.timeout.connect([&] { controller.onWorkFinished(); }, &controller);
+    // timer.timeout.connect([&] { controller.onWorkFinished(); }, &controller);
+    timer.timeout.connect(&Controller::onWorkFinished, &controller);
 
     timerThread.post([&] { timer.start(1000); });
     // 投递任务到工作线程

@@ -61,19 +61,28 @@ protected:
 
 class SlotBase
 {
-private:
-  
 public:
   virtual void execute() = 0;
   virtual ~SlotBase() = default;
+
+  template<typename... Args>
+  void invoke(Args&&... args) {
+    executeImpl(std::forward<Args>(args)...);
+  }
+private:
+  virtual void executeImpl() {}
 };
 
-template <typename Func>
+template <typename Func, typename... Args>
 class Slot : public SlotBase
 {
 public:
   Slot(Func func) : func_(std::move(func)) {};
-  void execute() override { func_(); };
+  void execute() override { func_(); }
+
+  void executeImpl(Args&&... args) override {
+    func_(std::forward<Args>(args)...);
+  }
 private:
   Func func_;
 };
@@ -83,18 +92,38 @@ template <typename... Args>
 class Signal  
 {
 public:
+  // 支持lambda函数和普通函数
   template <typename Func>
   void connect(Func&& func, Object* receiver = nullptr) {
-    slots_.emplace_back(new Slot<Func>(std::forward<Func>(func)), receiver);
+    using SlotType = Slot<Func, Args...>;
+    slots_.emplace_back(std::make_unique<SlotType>(std::forward<Func>(func)), receiver);
+  }
+
+  // 支持成员函数指针
+  template <typename T>
+  void connect(void (T::*method)(Args...), T* receiver) {
+    auto func = [receiver, method](Args... args) {
+      (receiver->*method)(std::forward<Args>(args)...);
+    };
+    using FuncType = decltype(func);
+    using SlotType = Slot<FuncType, Args...>;
+    slots_.emplace_back(std::make_unique<SlotType>(std::move(func)), receiver);
   }
 
   void emit(Args... args) {
     for (auto& [slot, receiver] : slots_) {
       if (!receiver || receiver->thread() == nullptr) {
-        slot->execute();
+        // slot->execute();
+        slot->invoke(std::forward<Args>(args)...);
       } else {
-        // 投递到目标线程的事件队列
-        receiver->thread()->post([slot = slot.get()] { slot->execute(); });
+        // 捕获参数并转发到线程
+        auto args_tuple = std::make_tuple(std::forward<Args>(args)...);
+        auto task = [slot = slot.get(), args_tuple = std::move(args_tuple)]() mutable {
+          std::apply([slot](auto&&... unpackedArgs) {
+              slot->invoke(std::forward<decltype(unpackedArgs)>(unpackedArgs)...);
+          }, args_tuple);
+        };
+        receiver->thread()->post(std::move(task));
       }
     }
   }
