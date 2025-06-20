@@ -50,7 +50,8 @@ int main() {
     // timer.timeout.connect([&] { controller.onWorkFinished(); }, &controller);
     timer.timeout.connect(&Controller::onWorkFinished, &controller);
 
-    timerThread.post([&] { timer.start(1000); });
+    // timerThread.post([&] { timer.start(1000); });
+    timerThread.post(&timer, &Timer::start, static_cast<uint64_t>(1000));
     // 投递任务到工作线程
     // workerThread.post([&] { worker.doWork(); });
 

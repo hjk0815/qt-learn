@@ -37,6 +37,17 @@ public:
   ~Thread();
 
   void post(std::function<void()> task);
+
+  template <typename T, typename... Args>
+  void post(T* obj, void (T::*method)(Args...), Args&&... args) {
+    auto args_tuple = std::make_tuple(std::forward<Args>(args)...);
+    post([obj, method, args_tuple = std::move(args_tuple)]() mutable {
+      std::apply([obj, method](auto&&... unpackedArgs) {
+        (obj->*method)(std::forward<decltype(unpackedArgs)>(unpackedArgs)...);
+      }, args_tuple);
+    });
+  }
+
 };
 
 
