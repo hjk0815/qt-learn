@@ -14,3 +14,6 @@ public:
 };
 
 
+
+typedef struct uart_opaque_type * uart_handle_t;
+

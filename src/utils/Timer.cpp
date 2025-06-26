@@ -1,4 +1,4 @@
-#include "Timer.h"
+#include "utils/Timer.h"
 
 #include <iostream>
 
@@ -10,6 +10,14 @@ void Timer::start(uint64_t interval)
     timeout.emit();
   });
 }
+
+struct uart_opaque_type
+{
+  uint32_t            baudrate;
+  uint8_t             databits;
+  uint8_t             stopbits;
+};
+
 
 
 

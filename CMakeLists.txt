@@ -22,7 +22,7 @@ set(SOURCE main.cpp
 add_executable(jk ${SOURCE})
 
 set(PROJECT_PUBLIC_INCLUDES
-    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/include
 )
 
 target_include_directories(jk
