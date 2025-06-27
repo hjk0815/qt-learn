@@ -18,3 +18,4 @@ void RingBuffer::ring_init(void *buf_memory, size_t buf_size_bytes)
     ring_handle_->wrpos = 0;
   }
 }
+
